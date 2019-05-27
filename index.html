@@ -8,7 +8,8 @@
         <script type="text/javascript" src="js/jquery.js"></script>
         <script type="text/javascript" src="js/main.js"></script>
     </head>
-    <body onload="start();">
+
+    <body>
         <div id="koapad">
             <table id="header">
                 <tr>
@@ -18,70 +19,20 @@
                     </td>
                     <td id="settings">
                         <div class="setting">
-                            <div id="volume" class="circleButton">80</div><label for="volume">Volume</label>
+                            <div id="volume" class="circleSlider">80</div><label for="volume">Volume</label>
                         </div>
 
                         <div class="setting">
-                            <div id="lightPower" class="circleButton">8</div><label for="lightPower">Light power</label>
+                            <div id="lightPower" class="circleSlider">8</div><label for="lightPower">Light power</label>
                         </div>
                     </td>
                 </tr>
             </table>
 
-            <table id="keypad">
-                <tr>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                </tr>
-
-                <tr>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                </tr>
-
-                <tr>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                </tr>
-
-                <tr>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                    <td class="key"></td>
-                </tr>
-            </table>
+            <table id="keypad"></table>
         </div>
+
+        <!-- Some help for noobs -->
         <h3>How to use ?</h3>
         <p>
             Step 1: Drag-and-drop any MP3 sound on a key<br />

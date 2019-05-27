@@ -1,260 +1,228 @@
-let chars = ("1234567890AZERTYUIOPQSDFGHJKLMWXCVBN,;:!").split("");
-let azertyMap = [49, 50, 51, 52, 53, 54, 55, 56, 57, 48, 65, 90, 69, 82, 84, 89, 85, 73, 79, 80, 81, 83, 68, 70, 71, 72, 74, 75, 76, 77, 87, 88, 67, 86, 66, 78, 188, 59, 58, 161];
-let bindings = [];
-let keyState = [];
+window.addEventListener("load", () => {
+    const chars = ("1234567890AZERTYUIOPQSDFGHJKLMWXCVBN,;:!").split("");
+    const KEYMAP = {
+        AZERTY: [
+            49, 50, 51, 52, 53, 54,  55, 56, 57,  48,
+            65, 90, 69, 82, 84, 89,  85, 73, 79,  80,
+            81, 83, 68, 70, 71, 72,  74, 75, 76,  77,
+            87, 88, 67, 86, 66, 78, 188, 59, 58, 161
+        ]
+    };
 
-let selectColor = [46, 204, 113];
-let hoverColor = [26, 188, 156];
-let selectedPadKey = null;
+    const COLOR_SELECTED = [46, 204, 113];
+    const COLOR_HOVER = [26, 188, 156];
 
-let audioContext;
+    let audioContext;
 
-let settings = [];
+    let settings = [];
+    let bindings = [];
+    let keyState = [];
+    let padkeys = [];
 
-let padkeys;
+    let selectedPadKey = null;
 
-let test;
+    class PadKey {
+        constructor(i) {
+            let keyNumber = document.createElement("span");
+            keyNumber.setAttribute("class", "keyNumber");
+            keyNumber.innerHTML = chars[i];
 
-function playSound(soundBuffer, time) {
-    let gainNode = audioContext.createGain();
-    gainNode.connect(audioContext.destination);
+            this.element = document.createElement("td");
 
-    let normVolume = settings.volume.getNormalizedValue();
+            this.element.addEventListener("dragover", function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'copy';
+            }, false);
 
-    gainNode.gain.value = normVolume * normVolume;
+            const that = this;
+            this.element.addEventListener("drop", function(e) {
+                e.stopPropagation();
+                e.preventDefault();
 
-    let bufferSource = audioContext.createBufferSource();
-    bufferSource.buffer = soundBuffer;
-    bufferSource.connect(gainNode);
-    bufferSource.start(time);
+                let soundFile = e.dataTransfer.files[0];
 
-    bufferSource.addEventListener("ended", function() {
-        bufferSource.disconnect(gainNode);
-        gainNode.disconnect(audioContext.destination);
-    });
-}
+                let reader = new FileReader();
 
-function initKeys() {
-    padkeys = document.getElementsByClassName("key");
-
-    for(let i = 0; i < padkeys.length; i++) {
-        let keyNumber = document.createElement("span");
-        keyNumber.setAttribute("class", "keyNumber");
-        keyNumber.innerHTML = chars[i];
-
-        padkeys[i].playSound = function(time) {
-            if(this.soundBuffer) {
-                playSound(this.soundBuffer, time);
-            }
-        };
-
-        padkeys[i].addEventListener("dragover", function(e) {
-            e.stopPropagation();
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'copy';
-        }, false);
-
-        padkeys[i].addEventListener("drop", function(e) {
-            e.stopPropagation();
-            e.preventDefault();
-
-            this.soundFile = e.dataTransfer.files[0];
-
-            let reader = new FileReader();
-
-            let padkey = this;
-
-            reader.addEventListener("load", function(e) {
-                audioContext.decodeAudioData(e.target.result, function(buffer) {
-                    padkey.soundBuffer = buffer;
+                reader.addEventListener("loadend", function(e) {
+                    if(e.target.result && !e.target.error) {
+                        audioContext.decodeAudioData(e.target.result, function(buffer) {
+                            that.soundBuffer = buffer;
+                        });
+                    }
                 });
+
+                reader.readAsArrayBuffer(soundFile);
+            }, false);
+
+            this.element.appendChild(keyNumber);
+
+            this.resetColor();
+        }
+
+        playSound(time) {
+            let gainNode = audioContext.createGain();
+            gainNode.connect(audioContext.destination);
+
+            let normVolume = settings["volume"].getNormalizedValue();
+
+            gainNode.gain.value = normVolume * normVolume;
+
+            let bufferSource = audioContext.createBufferSource();
+            bufferSource.buffer = this.soundBuffer;
+            bufferSource.connect(gainNode);
+            bufferSource.start(time);
+
+            bufferSource.addEventListener("ended", function() {
+                bufferSource.disconnect(gainNode);
+                gainNode.disconnect(audioContext.destination);
             });
+        }
 
-            reader.readAsArrayBuffer(this.soundFile);
-        }, false);
-
-        padkeys[i].appendChild(keyNumber);
-
-        padkeys[i].setColor = function(r, g, b) {
-            let color = "rgb("+r+", "+g+", "+b+")";
-            let grayscale = (r + g + b)/3.0;
-            let lighting = -(grayscale/255.0 - 1.0) * settings["lightPower"].currentValue;
+        setColor(r, g, b) {
+            let color = `rgb(${r}, ${g}, ${b})`;
+            let grayscale = (r + g + b) / 3.0;
+            let lighting = -(grayscale / 255.0 - 1.0) * settings["lightPower"].currentValue;
 
             this.color = [r, g, b];
-            this.lighting = lighting;
-            this.style.backgroundColor = color;
-            this.style.boxShadow = "0px 0px "+this.lighting+"px "+color;
-        };
+            this.element.style.backgroundColor = color;
+            this.element.style.boxShadow = `0px 0px ${lighting}px ${color}`;
+        }
 
-        padkeys[i].setColorv = function(color) {
+        setColorv(color) {
             this.setColor(color[0], color[1], color[2]);
-        };
+        }
 
-        padkeys[i].resetColor = function() {
+        resetColor() {
             this.setColor(189.0, 195.0, 199.0);
-        };
+        }
 
-        padkeys[i].onmouseenter = function() {
+        onmouseenter() {
             if(!this.selected()) {
-                this.setColorv(hoverColor);
+                this.setColorv(COLOR_HOVER);
             } else {
-                this.setColorv(selectColor);
+                this.setColorv(COLOR_SELECTED);
             }
-        };
+        }
 
-        padkeys[i].onmouseout = function() {
+        onmouseout() {
             if(!this.selected()) {
                 this.resetColor();
             } else {
-                this.setColorv(selectColor);
+                this.setColorv(COLOR_SELECTED);
             }
-        };
+        }
 
-        padkeys[i].selected = function() {
-            return selectedPadKey == this;
-        };
+        selected() {
+            return this == selectedPadKey;
+        }
 
-        padkeys[i].unselect = function() {
+        unselect() {
             this.resetColor();
             selectedPadKey = null;
-        };
+        }
 
-        padkeys[i].selectPadKey = function() {
+        selectPadKey() {
             if(selectedPadKey != null || this.selected()) {
                 selectedPadKey.unselect();
             }
 
             selectedPadKey = this;
-            this.setColorv(selectColor);
-        };
+            this.setColorv(COLOR_SELECTED);
+        }
 
-        padkeys[i].toggleSelect = function() {
+        toggleSelect() {
             if(this.selected()) {
                 this.unselect();
             } else {
                 this.selectPadKey();
             }
-        };
+        }
 
-        padkeys[i].onmousedown = function() {
+        onmousedown() {
             this.toggleSelect();
-        };
+        }
 
-        padkeys[i].refreshPadKey = function() {
+        refresh() {
             this.setColorv(this.color);
-        };
-
-        padkeys[i].resetColor();
+        }
     }
 
-    for(let i = 0; i < azertyMap.length; i++) {
-        bindings[azertyMap[i]] = i;
-    }
-}
+    class CircleSlider {
+        constructor(value) {
+            this.currentValue = value;
 
-function refreshPad() {
-    for(let i = 0; i < padkeys.length; i++) {
-        padkeys[i].refreshPadKey();
-    }
-}
+            this.element = document.createElement("div");
 
-function keyDown(event) {
-    event.preventDefault();
-
-    if(keyState[event.keyCode]) {
-        return;
-    }
-
-    keyState[event.keyCode] = true;
-
-    let currentPadKey = padkeys[bindings[event.keyCode]];
-
-    if(!currentPadKey) {
-        return;
-    }
-
-    let r = Math.random() * 255.0;
-    let g = Math.random() * 255.0;
-    let b = Math.random() * 255.0;
-
-    r = Math.floor(r);
-    g = Math.floor(g);
-    b = Math.floor(b);
-
-
-
-    currentPadKey.unselect(); // Unselected the padkey if it is selected
-    currentPadKey.setColor(r, g, b); // Set a random color
-
-    currentPadKey.playSound(0);
-}
-
-function keyUp(event) {
-    let currentPadKey = padkeys[bindings[event.keyCode]];
-
-    if(!currentPadKey) {
-        return;
-    }
-
-    keyState[event.keyCode] = false;
-
-
-    currentPadKey.resetColor();
-}
-
-function initKeyboard() {
-    window.addEventListener("keydown", keyDown);
-    window.addEventListener("keyup", keyUp);
-}
-
-function initAudioContext() {
-    try {
-        window.AudioContext = window.AudioContext || window.webkitAudioContext;
-
-        audioContext = new AudioContext();
-    } catch(e) {
-        alert("This navigator doesn't seems to support the Audio API used by Koapad !\nTry to update it or to change it.");
-    }
-}
-
-function initUI() {
-    let circleButtons = $(".circleButton");
-
-    for(let i = 0; i < circleButtons.length; i++) {
-        let button = circleButtons[i];
-
-        button.currentValue = parseInt(button.innerHTML);
-        button.innerHTML = "";
-
-        button.valueDiv = document.createElement("div");
-        button.valueDiv.setAttribute("class", "value");
-        button.valueDiv.innerHTML = button.currentValue;
-        button.appendChild(button.valueDiv);
-
-        button.controllersDiv = document.createElement("div");
-        button.controllersDiv.setAttribute("class", "controllers");
-
-        button.controllersDiv.plus = document.createElement("div");
-        button.controllersDiv.plus.setAttribute("class", "plus");
-        button.controllersDiv.plus.innerHTML = "+";
-
-        button.controllersDiv.minus = document.createElement("div");
-        button.controllersDiv.minus.setAttribute("class", "minus");
-        button.controllersDiv.minus.innerHTML = "-";
-
-        button.controllersDiv.appendChild(button.controllersDiv.plus);
-        button.controllersDiv.appendChild(button.controllersDiv.minus);
-
-        button.appendChild(button.controllersDiv);
-
-        button.min = null;
-        button.max = null;
-
-        button.refreshDisplay = function() {
+            this.valueDiv = document.createElement("div");
+            this.valueDiv.setAttribute("class", "value");
             this.valueDiv.innerHTML = this.currentValue;
-        };
+            this.element.appendChild(this.valueDiv);
 
-        button.setValue = function(x) {
+            this.controllersDiv = document.createElement("div");
+            this.controllersDiv.setAttribute("class", "controllers");
+
+            this.plus = document.createElement("div");
+            this.plus.setAttribute("class", "plus");
+            this.plus.innerHTML = "+";
+
+            this.minus = document.createElement("div");
+            this.minus.setAttribute("class", "minus");
+            this.minus.innerHTML = "-";
+
+            this.controllersDiv.appendChild(this.plus);
+            this.controllersDiv.appendChild(this.minus);
+
+            this.element.appendChild(this.controllersDiv);
+
+            this.min = null;
+            this.max = null;
+
+            let wheelListener = (e) => {
+                e.preventDefault();
+
+                let side = 0;
+
+                if('wheelDelta' in e) {
+                    // No firefox
+                    if(e.wheelDelta < 0) {
+                        side = 1;
+                    } else if(e.wheelDelta > 0) {
+                        side = -1;
+                    }
+                } else {
+                    // Firefox
+                    if(e.detail < 0) {
+                        side = 1;
+                    } else if(e.detail > 0) {
+                        side = -1;
+                    }
+                }
+
+                this.moveValue(side);
+            };
+
+            this.element.addEventListener("onmousewheel", wheelListener);
+            this.element.addEventListener("DOMMouseScroll", wheelListener);
+
+            this.plus.addEventListener("mousedown", (e) => {
+                e.preventDefault();
+
+                this.parentNode.parentNode.moveValue(+1);
+            });
+
+            this.minus.addEventListener("mousedown", (e) => {
+                e.preventDefault();
+
+                this.parentNode.parentNode.moveValue(-1);
+            });
+        }
+
+        refreshDisplay() {
+            this.valueDiv.innerHTML = this.currentValue;
+        }
+
+        setValue(x) {
             if(this.min != null && x < this.min) {
                 return;
             }
@@ -270,79 +238,120 @@ function initUI() {
             }
 
             this.refreshDisplay();
-        };
+        }
 
-        button.moveValue = function(x) {
+        moveValue(x) {
             this.setValue(this.currentValue + x);
-        };
+        }
 
-        button.setRange = function(min, max) {
+        setRange(min, max) {
             this.min = min;
             this.max = max;
-        };
+        }
 
-        button.getNormalizedValue = function() {
+        getNormalizedValue() {
             if(this.max == null || this.max == 0) {
                 return 0;
             }
 
             return this.currentValue / this.max;
-        };
-
-        let wheelListener = function(e) {
-            e.preventDefault();
-
-            let side = 0;
-
-            if('wheelDelta' in e) {
-                // No firefox
-                if(e.wheelDelta < 0) {
-                    side = 1;
-                } else if(e.wheelDelta > 0) {
-                    side = -1;
-                }
-            } else {
-                // Firefox
-                if(e.detail < 0) {
-                    side = 1;
-                } else if(e.detail > 0) {
-                    side = -1;
-                }
-            }
-
-            this.moveValue(side);
         }
-
-        button.addEventListener("onmousewheel", wheelListener);
-        button.addEventListener("DOMMouseScroll", wheelListener);
-
-        button.controllersDiv.plus.onmousedown = function(e) {
-            e.preventDefault();
-
-            this.parentNode.parentNode.moveValue(+1);
-        };
-
-        button.controllersDiv.minus.onmousedown = function(e) {
-            e.preventDefault();
-
-            this.parentNode.parentNode.moveValue(-1);
-        };
-
-        settings[button.id] = button;
     }
 
-    settings["lightPower"].onvaluechanged = function() {
-        refreshPad();
-    };
+    window.addEventListener("keydown", (event) => {
+        if(keyState[event.keyCode]) {
+            return;
+        }
 
-    settings["lightPower"].setRange(0, 100);
-    settings["volume"].setRange(0, 100);
-}
+        keyState[event.keyCode] = true;
 
-function start() {
-    initAudioContext();
+        let currentPadKey = padkeys[bindings[event.keyCode]];
 
-    initUI();
-    initKeys();
-    initKeyboard();
-}
+        if(!currentPadKey) {
+            return;
+        }
+
+        event.preventDefault();
+
+        let r = Math.random() * 255.0;
+        let g = Math.random() * 255.0;
+        let b = Math.random() * 255.0;
+
+        r = Math.floor(r);
+        g = Math.floor(g);
+        b = Math.floor(b);
+
+        currentPadKey.unselect(); // Unselected the padkey if it is selected
+        currentPadKey.setColor(r, g, b); // Set a random color
+
+        currentPadKey.playSound(0);
+    });
+
+    window.addEventListener("keyup", (event) => {
+        let currentPadKey = padkeys[bindings[event.keyCode]];
+
+        if(!currentPadKey) {
+            return;
+        }
+
+        keyState[event.keyCode] = false;
+
+        currentPadKey.resetColor();
+    });
+
+    // -- MAIN --
+
+    // Init audio context
+    try {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    } catch(e) {
+        alert("Your browser doesn't seems to support the Audio API needed by Koapad!\nTry updating it, or use a different web browser.");
+        return;
+    }
+
+    // Init UI
+    {
+        let circleSliders = $(".circleSlider");
+
+        for(let i = 0; i < circleSliders.length; i++) {
+            let sliderEl = circleSliders[i];
+            let value = parseInt(sliderEl.innerHTML);
+            sliderEl.innerHTML = "";
+
+            let slider = new CircleSlider(value);
+            sliderEl.appendChild(slider.element);
+
+            settings[sliderEl.id] = slider
+        }
+
+        settings["lightPower"].onvaluechanged = function() {
+            for(let i = 0; i < padkeys.length; i++) {
+                padkeys[i].refresh();
+            }
+        };
+
+        settings["lightPower"].setRange(0, 100);
+        settings["volume"].setRange(0, 100);
+    }
+
+    // Init Keys
+    {
+        let keypad = document.getElementById("keypad");
+
+        for(let j = 0; j < 4; j++) {
+            let tr = document.createElement("tr");
+
+            for(let i = 0; i < 10; i++) {
+                let padkey = new PadKey(j * 10 + i);
+                padkeys.push(padkey);
+                tr.appendChild(padkey.element);
+            }
+
+            keypad.appendChild(tr);
+        }
+
+        for(let i = 0; i < KEYMAP.AZERTY.length; i++) {
+            bindings[KEYMAP.AZERTY[i]] = i;
+        }
+    }
+});
