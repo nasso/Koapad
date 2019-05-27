@@ -23,135 +23,136 @@ body {
     text-align: left;
     box-shadow: 0px 0px 4px black;
 
-    h1 {
-        display: inline-block;
-        line-height: 0.8em;
-        color: #BDC3C7;
-        font-size: 2em;
-        height: 0.8em;
-    }
-
     #title {
         position: relative;
         top: -6px;
-    }
-
-    .version {
-        font-size: 0.5em;
         display: inline-block;
-        float: right;
-        margin: -8px 0px;
-    }
-}
 
-#keypad {
-    border-spacing: 8px;
-}
+        h1 {
+            display: block;
+            line-height: 0.8em;
+            color: #BDC3C7;
+            font-size: 2em;
+            // height: 0.8em;
+        }
 
-#header {
-    border-spacing: 16px 8px;
-}
-
-#titlePrefix {
-    background-color: #2ecc71;
-    color: #2C3E50;
-    padding: 0px 6px;
-    border-radius: 8px 0px 0px 8px;
-    border: 2px solid #2ecc71;
-}
-
-#titleSuffix {
-    padding: 0px 6px;
-    border-radius: 0px 8px 8px 0px;
-    border: 2px solid #2ecc71;
-}
-
-#keypad {
-    // Keys
-    td {
-        z-index: 99;
-
-        width: 32px;
-        height: 32px;
-        text-align: left;
-        padding: 32px;
-        color: #7F8C8D;
-        border-radius: 2px;
-    }
-}
-
-.keyNumber {
-    text-shadow: 0px 0px 8px #7F8C8D;
-    position: relative;
-    bottom: -36px;
-    left: -26px;
-}
-
-/* UI */
-#settings {
-    border-radius: 2px;
-    width: 100%;
-    background-color: #34495e;
-}
-
-.setting {
-    display: inline-block;
-    text-align: center;
-    position: relative;
-    top: 2px;
-
-    & + & {
-        border-left: 1px solid #2c3e50;
-    }
-}
-
-.circleSlider {
-    .value, .controllers {
-        margin-bottom: 16px;
+        .version {
+            font-size: 10px;
+            display: block;
+            text-align: right;
+        }
     }
 
-    .value {
-        display: inline-block;
-        float: left;
-        background-color: #2c3e50;
-        border: none;
+    #header {
+        border-spacing: 16px 8px;
 
-        width: 32px;
-        height: 32px;
-        margin: 0px 6px 0px 8px;
-        border-radius: 2px;
-        border: 1px solid #2ecc71;
-        box-shadow:
-            0px 0px 2px #2ecc71,
-            0px 0px 2px black inset;
+        #titlePrefix {
+            background-color: #2ecc71;
+            color: #2C3E50;
+            padding: 0px 6px;
+            border-radius: 8px 0px 0px 8px;
+            border: 2px solid #2ecc71;
+        }
 
-        text-align: center;
-        line-height: 32px;
-        font-size: 0.8em;
-        overflow: hidden;
-    }
+        #titleSuffix {
+            padding: 0px 6px;
+            border-radius: 0px 8px 8px 0px;
+            border: 2px solid #2ecc71;
+        }
 
-    .controllers {
-        display: inline-block;
-        font-size: 0.6em;
-        position: relative;
-        top: 4px;
-
-        .plus, .minus {
-            background-color: #2c3e50;
-            padding: 0px 4px;
-            width: 4px;
+        /* UI */
+        #settings {
             border-radius: 2px;
-            cursor: default;
+            background-color: #34495e;
+            padding: 0px 16px;
+            margin: 0px 8px;
 
-            &.minus {
-                margin-top: 4px;
+            .setting {
+                display: inline-block;
+                text-align: center;
+                position: relative;
+                top: 2px;
+
+                & + & {
+                    border-left: 1px solid #2c3e50;
+                }
+            }
+        }
+
+        .circleSlider {
+            .value, .controllers {
+                margin-bottom: 16px;
+            }
+
+            .value {
+                display: inline-block;
+                float: left;
+                background-color: #2c3e50;
+                border: none;
+
+                width: 32px;
+                height: 32px;
+                margin: 0px 6px 0px 8px;
+                border-radius: 2px;
+                border: 1px solid #2ecc71;
+                box-shadow:
+                    0px 0px 2px #2ecc71,
+                    0px 0px 2px black inset;
+
+                text-align: center;
+                line-height: 32px;
+                font-size: 0.8em;
+                overflow: hidden;
+            }
+
+            .controllers {
+                display: inline-block;
+                font-size: 0.6em;
+                position: relative;
+                top: 4px;
+
+                .plus, .minus {
+                    background-color: #2c3e50;
+                    padding: 0px 4px;
+                    width: 4px;
+                    border-radius: 2px;
+                    cursor: default;
+
+                    &.minus {
+                        margin-top: 4px;
+                    }
+                }
+            }
+
+            & + label {
+                display: block;
+                font-size: 10px;
             }
         }
     }
 
-    & + label {
-        display: block;
-        font-size: 10px;
+    #keypad {
+        border-spacing: 8px;
+
+        // Keys
+        td {
+            z-index: 99;
+
+            width: 32px;
+            height: 32px;
+            text-align: left;
+            padding: 32px;
+            color: #7F8C8D;
+            border-radius: 2px;
+        }
+
+        .keyNumber {
+            text-shadow: 0px 0px 8px #7F8C8D;
+            position: relative;
+            bottom: -36px;
+            left: -26px;
+        }
     }
 }
+
+
