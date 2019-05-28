@@ -312,9 +312,9 @@ window.addEventListener("load", () => {
         return;
     }
 
-    // Init UI
+    // Init settings UI
     {
-        let circleSliders = $(".circleSlider");
+        let circleSliders = document.getElementsByClassName("circleSlider");
 
         for(let i = 0; i < circleSliders.length; i++) {
             let sliderEl = circleSliders[i];
