@@ -120,36 +120,49 @@ class PadKey {
 }
 
 class CircleSlider {
-    constructor(value) {
+    constructor(id, label, min, max, v, onvaluechanged) {
         const that = this;
 
-        this.currentValue = value;
+        this.id = id;
+        this.label = label;
+        this.min = min;
+        this.max = max;
+        this.currentValue = v;
+        this.onvaluechanged = onvaluechanged;
 
         this.element = document.createElement("div");
+        this.element.classList.add("setting");
+
+        this.controlDiv = document.createElement("div");
+        this.controlDiv.classList.add("circleSlider");
+        this.controlDiv.setAttribute("id", this.id);
+        this.element.appendChild(this.controlDiv);
+
+        this.labelEl = document.createElement("label");
+        this.labelEl.setAttribute("for", this.id);
+        this.labelEl.innerHTML = this.label;
+        this.element.appendChild(this.labelEl);
 
         this.valueDiv = document.createElement("div");
-        this.valueDiv.setAttribute("class", "value");
+        this.valueDiv.classList.add("value");
         this.valueDiv.innerHTML = this.currentValue;
-        this.element.appendChild(this.valueDiv);
+        this.controlDiv.appendChild(this.valueDiv);
 
         this.controllersDiv = document.createElement("div");
-        this.controllersDiv.setAttribute("class", "controllers");
+        this.controllersDiv.classList.add("controllers");
 
         this.plus = document.createElement("div");
-        this.plus.setAttribute("class", "plus");
+        this.plus.classList.add("plus");
         this.plus.innerHTML = "+";
 
         this.minus = document.createElement("div");
-        this.minus.setAttribute("class", "minus");
+        this.minus.classList.add("minus");
         this.minus.innerHTML = "-";
 
         this.controllersDiv.appendChild(this.plus);
         this.controllersDiv.appendChild(this.minus);
 
-        this.element.appendChild(this.controllersDiv);
-
-        this.min = null;
-        this.max = null;
+        this.controlDiv.appendChild(this.controllersDiv);
 
         let wheelListener = (e) => {
             e.preventDefault();
@@ -175,8 +188,8 @@ class CircleSlider {
             that.moveValue(side);
         };
 
-        this.element.addEventListener("onmousewheel", wheelListener);
-        this.element.addEventListener("DOMMouseScroll", wheelListener);
+        this.controlDiv.addEventListener("onmousewheel", wheelListener);
+        this.controlDiv.addEventListener("DOMMouseScroll", wheelListener);
 
         this.plus.addEventListener("mousedown", (e) => {
             e.preventDefault();
@@ -220,14 +233,6 @@ class CircleSlider {
     setRange(min, max) {
         this.min = min;
         this.max = max;
-    }
-
-    getNormalizedValue() {
-        if(this.max == null || this.max == 0) {
-            return 0;
-        }
-
-        return this.currentValue / this.max;
     }
 }
 
@@ -294,32 +299,46 @@ window.addEventListener("load", () => {
 
     // Init settings UI
     {
-        let circleSliders = document.getElementsByClassName("circleSlider");
+        // let circleSliders = document.getElementsByClassName("circleSlider");
 
-        for(let i = 0; i < circleSliders.length; i++) {
-            let sliderEl = circleSliders[i];
-            let value = parseInt(sliderEl.innerHTML);
-            sliderEl.innerHTML = "";
+        // for(let i = 0; i < circleSliders.length; i++) {
+        //     let sliderEl = circleSliders[i];
+        //     let value = parseInt(sliderEl.innerHTML);
+        //     sliderEl.innerHTML = "";
 
-            let slider = new CircleSlider(value);
-            sliderEl.appendChild(slider.element);
+        //     let slider = new CircleSlider(value);
+        //     sliderEl.appendChild(slider.element);
 
-            settings[sliderEl.id] = slider
-        }
+        //     settings[sliderEl.id] = slider
+        // }
 
-        settings["lightPower"].setRange(0, 100);
-        settings["volume"].setRange(0, 100);
+        let settingsDiv = document.getElementById("settings");
 
-        settings["lightPower"].onvaluechanged = v => {
-            for(let i = 0; i < padkeys.length; i++) {
+        settings["lightPower"] = new CircleSlider("lightPower", "Light Power", 0, 100, 8, v => {
+            for (let i = padkeys.length - 1; i >= 0; i--) {
                 padkeys[i].lightPower = v
                 padkeys[i].refresh();
             }
-        };
+        });
 
-        settings["volume"].onvaluechanged = v => {
+        settings["volume"] = new CircleSlider("volume", "Volume", 0, 100, 80, v => {
             masterGain.gain.value = v * v / 10000;
-        };
+        });
+
+        settings["tempo"] = new CircleSlider("tempo", "Tempo", 10, 512, 140, v => {});
+
+        for(let x in settings) {
+            settingsDiv.appendChild(settings[x].element)
+        }
+    }
+
+    // Init sequencer UI
+    {
+        let sequencer = document.getElementById("sequencer");
+
+        for(let i = 0; i < SEQUENCER_TRACK_COUNT; i++) {
+            // let trackButton = new TrackButton();
+        }
     }
 
     // Init Keys

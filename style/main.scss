@@ -99,8 +99,6 @@ body {
             .setting {
                 display: inline-block;
                 text-align: center;
-                position: relative;
-                top: 2px;
 
                 & + & {
                     border-left: 1px solid #2c3e50;

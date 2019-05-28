@@ -80,8 +80,6 @@ body {
 #koapad #header #settings .setting {
   display: inline-block;
   text-align: center;
-  position: relative;
-  top: 2px;
 }
 #koapad #header #settings .setting + #koapad #header #settings .setting {
   border-left: 1px solid #2c3e50;
