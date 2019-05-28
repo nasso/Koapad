@@ -150,6 +150,8 @@ window.addEventListener("load", () => {
 
     class CircleSlider {
         constructor(value) {
+            const that = this;
+
             this.currentValue = value;
 
             this.element = document.createElement("div");
@@ -199,7 +201,7 @@ window.addEventListener("load", () => {
                     }
                 }
 
-                this.moveValue(side);
+                that.moveValue(side);
             };
 
             this.element.addEventListener("onmousewheel", wheelListener);
@@ -208,13 +210,13 @@ window.addEventListener("load", () => {
             this.plus.addEventListener("mousedown", (e) => {
                 e.preventDefault();
 
-                this.parentNode.parentNode.moveValue(+1);
+                that.moveValue(+1);
             });
 
             this.minus.addEventListener("mousedown", (e) => {
                 e.preventDefault();
 
-                this.parentNode.parentNode.moveValue(-1);
+                that.moveValue(-1);
             });
         }
 
