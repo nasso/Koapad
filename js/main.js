@@ -23,20 +23,22 @@ window.addEventListener("load", () => {
 
     class PadKey {
         constructor(i) {
+            const that = this;
+
             let keyNumber = document.createElement("span");
             keyNumber.setAttribute("class", "keyNumber");
             keyNumber.innerHTML = chars[i];
 
-            this.element = document.createElement("td");
+            this.element = document.createElement("div");
+            this.element.classList.add("key");
 
-            this.element.addEventListener("dragover", function(e) {
+            this.element.addEventListener("dragover", (e) => {
                 e.stopPropagation();
                 e.preventDefault();
                 e.dataTransfer.dropEffect = 'copy';
             }, false);
 
-            const that = this;
-            this.element.addEventListener("drop", function(e) {
+            this.element.addEventListener("drop", (e) => {
                 e.stopPropagation();
                 e.preventDefault();
 
@@ -44,7 +46,7 @@ window.addEventListener("load", () => {
 
                 let reader = new FileReader();
 
-                reader.addEventListener("loadend", function(e) {
+                reader.addEventListener("loadend", (e) => {
                     if(e.target.result && !e.target.error) {
                         audioContext.decodeAudioData(e.target.result, function(buffer) {
                             that.soundBuffer = buffer;
@@ -54,6 +56,25 @@ window.addEventListener("load", () => {
 
                 reader.readAsArrayBuffer(soundFile);
             }, false);
+
+            this.element.addEventListener("mousedown", (e) => {
+                e.preventDefault();
+
+                that.playSound(0);
+
+                let r = Math.random() * 255.0;
+                let g = Math.random() * 255.0;
+                let b = Math.random() * 255.0;
+
+                r = Math.floor(r);
+                g = Math.floor(g);
+                b = Math.floor(b);
+
+                that.setColor(r, g, b);
+                setTimeout(() => {
+                    that.resetColor();
+                }, 100);
+            });
 
             this.element.appendChild(keyNumber);
 
@@ -97,22 +118,6 @@ window.addEventListener("load", () => {
             this.setColor(189.0, 195.0, 199.0);
         }
 
-        onmouseenter() {
-            if(!this.selected()) {
-                this.setColorv(COLOR_HOVER);
-            } else {
-                this.setColorv(COLOR_SELECTED);
-            }
-        }
-
-        onmouseout() {
-            if(!this.selected()) {
-                this.resetColor();
-            } else {
-                this.setColorv(COLOR_SELECTED);
-            }
-        }
-
         selected() {
             return this == selectedPadKey;
         }
@@ -137,10 +142,6 @@ window.addEventListener("load", () => {
             } else {
                 this.selectPadKey();
             }
-        }
-
-        onmousedown() {
-            this.toggleSelect();
         }
 
         refresh() {
@@ -341,15 +342,16 @@ window.addEventListener("load", () => {
         let keypad = document.getElementById("keypad");
 
         for(let j = 0; j < 4; j++) {
-            let tr = document.createElement("tr");
+            let row = document.createElement("div");
+            row.classList.add("row");
 
             for(let i = 0; i < 10; i++) {
                 let padkey = new PadKey(j * 10 + i);
                 padkeys.push(padkey);
-                tr.appendChild(padkey.element);
+                row.appendChild(padkey.element);
             }
 
-            keypad.appendChild(tr);
+            keypad.appendChild(row);
         }
 
         for(let i = 0; i < KEYMAP.AZERTY.length; i++) {
