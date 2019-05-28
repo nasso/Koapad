@@ -1,17 +1,19 @@
-window.addEventListener("load", () => {
-    const chars = ("1234567890AZERTYUIOPQSDFGHJKLMWXCVBN,;:!").split("");
-    const KEYMAP = {
-        AZERTY: [
+const LAYOUTS = {
+    "AZERTY": {
+        chars: ("1234567890AZERTYUIOPQSDFGHJKLMWXCVBN,;:!").split(""),
+        keymap: [
             49, 50, 51, 52, 53, 54,  55, 56, 57,  48,
             65, 90, 69, 82, 84, 89,  85, 73, 79,  80,
             81, 83, 68, 70, 71, 72,  74, 75, 76,  77,
             87, 88, 67, 86, 66, 78, 188, 59, 58, 161
         ]
-    };
+    }
+};
 
-    const COLOR_SELECTED = [46, 204, 113];
-    const COLOR_HOVER = [26, 188, 156];
+// Yeah that's the only available one for now
+const ACTIVE_LAYOUT = LAYOUTS["AZERTY"];
 
+window.addEventListener("load", () => {
     let audioContext;
 
     let settings = [];
@@ -27,7 +29,7 @@ window.addEventListener("load", () => {
 
             let keyNumber = document.createElement("span");
             keyNumber.setAttribute("class", "keyNumber");
-            keyNumber.innerHTML = chars[i];
+            keyNumber.innerHTML = ACTIVE_LAYOUT.chars[i];
 
             this.element = document.createElement("div");
             this.element.classList.add("key");
@@ -354,8 +356,8 @@ window.addEventListener("load", () => {
             keypad.appendChild(row);
         }
 
-        for(let i = 0; i < KEYMAP.AZERTY.length; i++) {
-            bindings[KEYMAP.AZERTY[i]] = i;
+        for(let i = 0; i < ACTIVE_LAYOUT.keymap.length; i++) {
+            bindings[ACTIVE_LAYOUT.keymap[i]] = i;
         }
     }
 });
