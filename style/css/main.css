@@ -124,7 +124,43 @@ body {
   font-size: 10px;
 }
 #koapad #header #sequencer {
+  display: inline-flex;
+  flex-direction: column;
   flex-grow: 100;
+}
+#koapad #header #sequencer #sequencerTracks, #koapad #header #sequencer #sequencerBeats {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: stretch;
+  padding: 0px 2px;
+}
+#koapad #header #sequencer #sequencerTracks > *, #koapad #header #sequencer #sequencerBeats > * {
+  flex-grow: 1;
+}
+#koapad #header #sequencer #sequencerTracks {
+  flex-grow: 100;
+  margin-bottom: 4px;
+  border-radius: 2px;
+}
+#koapad #header #sequencer #sequencerTracks > div {
+  background-color: #475F7A;
+  margin: 0px 4px;
+}
+#koapad #header #sequencer #sequencerBeats {
+  display: inline-flex;
+  flex-direction: row;
+  list-style: none;
+  margin: 0px;
+}
+#koapad #header #sequencer #sequencerBeats > li {
+  display: inline-block;
+  height: 4px;
+  background-color: #1A552F;
+  margin: 0px 4px;
+}
+#koapad #header #sequencer #sequencerBeats > li.on {
+  background-color: #13FF4B;
+  box-shadow: 0px 0px 4px #13FF4B;
 }
 #koapad #keypad {
   display: inline-flex;

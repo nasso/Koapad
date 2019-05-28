@@ -16,6 +16,8 @@ const ACTIVE_LAYOUT = LAYOUTS["AZERTY"];
 const DEFAULT_COLOR = [189.0, 195.0, 199.0];
 
 const SEQUENCER_TRACK_COUNT = 8;
+const SEQUENCER_BEAT_COUNT = 16;
+const SEQUENCER_RESOLUTION = 16;
 
 let audioContext;
 
@@ -236,11 +238,24 @@ class CircleSlider {
     }
 }
 
+class TrackButton {
+    constructor() {
+        this.element = document.createElement("div");
+
+        // this.element.addEventListener("mousedown", (e) => {
+
+        // });
+    }
+}
+
 window.addEventListener("load", () => {
     let settings = [];
     let bindings = [];
     let keyState = [];
     let padkeys = [];
+
+    let sequencerBeats = [];
+    let currentTick = 0;
 
     let masterGain;
 
@@ -283,6 +298,19 @@ window.addEventListener("load", () => {
 
         currentPadKey.resetColor();
     });
+
+    function sequencerLoop() {
+        currentTick = (currentTick + 1) % (SEQUENCER_RESOLUTION * SEQUENCER_BEAT_COUNT);
+
+        let beat = Math.floor(currentTick / (SEQUENCER_RESOLUTION));
+
+        for (var i = sequencerBeats.length - 1; i >= 0; i--) {
+            let el = sequencerBeats[i]
+            el.classList.toggle("on", i == beat);
+        }
+
+        setTimeout(sequencerLoop, 60000 / (settings["tempo"].currentValue * SEQUENCER_RESOLUTION));
+    }
 
     // -- MAIN --
 
@@ -334,10 +362,23 @@ window.addEventListener("load", () => {
 
     // Init sequencer UI
     {
-        let sequencer = document.getElementById("sequencer");
+        // Tracks
+        let sequencerTracks = document.getElementById("sequencerTracks");
 
         for(let i = 0; i < SEQUENCER_TRACK_COUNT; i++) {
-            // let trackButton = new TrackButton();
+            let trackButton = new TrackButton();
+
+            sequencerTracks.appendChild(trackButton.element);
+        }
+
+        // Beats
+        let sequencerBeatsEl = document.getElementById("sequencerBeats");
+
+        for (var i = 0; i < SEQUENCER_BEAT_COUNT; i++) {
+            let beat = document.createElement("li");
+            sequencerBeatsEl.appendChild(beat);
+
+            sequencerBeats.push(beat);
         }
     }
 
@@ -362,4 +403,6 @@ window.addEventListener("load", () => {
             bindings[ACTIVE_LAYOUT.keymap[i]] = i;
         }
     }
+
+    sequencerLoop();
 });
