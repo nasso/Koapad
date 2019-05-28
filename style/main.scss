@@ -7,7 +7,13 @@
 /* STYLE */
 * {
     font-family: "Roboto";
+
+    // haha prefixes
     user-select: none;
+    -o-user-select: none;
+    -ms-user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
 }
 
 body {
