@@ -17,7 +17,6 @@ const DEFAULT_COLOR = [189.0, 195.0, 199.0];
 
 const SEQUENCER_TRACK_COUNT = 8;
 const SEQUENCER_BEAT_COUNT = 16;
-const SEQUENCER_RESOLUTION = 16;
 
 let audioContext;
 
@@ -239,29 +238,35 @@ class CircleSlider {
 }
 
 class Sequencer {
-    constructor(tempo, resolution, beatCount, onbeat) {
+    constructor(tempo, beatCount, onbeat) {
         this.tempo = tempo;
-        this.resolution = resolution;
         this.beatCount = beatCount;
         this.onbeat = onbeat;
 
-        this.currentTick = 0;
+        this.barStartTime = 0;
 
-        this.beat = -1;
+        this.beat = 0;
     }
 
     main() {
-        this.currentTick = (this.currentTick + 1) % (this.resolution * this.beatCount);
+        this.beat = this.beat % this.beatCount + 1;
 
-        let beat = Math.floor(this.currentTick / (this.resolution));
-
-        if(this.beat != beat) {
-            this.beat = beat;
-            this.onbeat(beat);
+        // New bar if we reach 1
+        if(this.beat == 1) {
+            this.barStartTime = Date.now();
         }
 
+        // Beat event function
+        if(this.onbeat) {
+            this.onbeat(this.beat);
+        }
+
+        let nextBeatTime = this.beat * 60000 / this.tempo;
+        let elapsed = Date.now() - this.barStartTime;
+
+        // Small delay
         const that = this;
-        setTimeout(() => that.main(), 60000 / (this.tempo * this.resolution));
+        setTimeout(() => that.main(), nextBeatTime - elapsed);
     }
 }
 
@@ -282,10 +287,10 @@ window.addEventListener("load", () => {
     let padkeys = [];
 
     let sequencerBars = [];
-    let sequencer = new Sequencer(140, SEQUENCER_RESOLUTION, SEQUENCER_BEAT_COUNT, beat => {
+    let sequencer = new Sequencer(140, SEQUENCER_BEAT_COUNT, beat => {
         for (var i = sequencerBars.length - 1; i >= 0; i--) {
             let el = sequencerBars[i]
-            el.classList.toggle("on", i == beat);
+            el.classList.toggle("on", i == (beat - 1));
         }
     });
     let currentTick = 0;
