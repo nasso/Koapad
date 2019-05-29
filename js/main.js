@@ -238,6 +238,33 @@ class CircleSlider {
     }
 }
 
+class Sequencer {
+    constructor(tempo, resolution, beatCount, onbeat) {
+        this.tempo = tempo;
+        this.resolution = resolution;
+        this.beatCount = beatCount;
+        this.onbeat = onbeat;
+
+        this.currentTick = 0;
+
+        this.beat = -1;
+    }
+
+    main() {
+        this.currentTick = (this.currentTick + 1) % (this.resolution * this.beatCount);
+
+        let beat = Math.floor(this.currentTick / (this.resolution));
+
+        if(this.beat != beat) {
+            this.beat = beat;
+            this.onbeat(beat);
+        }
+
+        const that = this;
+        setTimeout(() => that.main(), 60000 / (this.tempo * this.resolution));
+    }
+}
+
 class TrackButton {
     constructor() {
         this.element = document.createElement("div");
@@ -254,7 +281,13 @@ window.addEventListener("load", () => {
     let keyState = [];
     let padkeys = [];
 
-    let sequencerBeats = [];
+    let sequencerBars = [];
+    let sequencer = new Sequencer(140, SEQUENCER_RESOLUTION, SEQUENCER_BEAT_COUNT, beat => {
+        for (var i = sequencerBars.length - 1; i >= 0; i--) {
+            let el = sequencerBars[i]
+            el.classList.toggle("on", i == beat);
+        }
+    });
     let currentTick = 0;
 
     let masterGain;
@@ -299,19 +332,6 @@ window.addEventListener("load", () => {
         currentPadKey.resetColor();
     });
 
-    function sequencerLoop() {
-        currentTick = (currentTick + 1) % (SEQUENCER_RESOLUTION * SEQUENCER_BEAT_COUNT);
-
-        let beat = Math.floor(currentTick / (SEQUENCER_RESOLUTION));
-
-        for (var i = sequencerBeats.length - 1; i >= 0; i--) {
-            let el = sequencerBeats[i]
-            el.classList.toggle("on", i == beat);
-        }
-
-        setTimeout(sequencerLoop, 60000 / (settings["tempo"].currentValue * SEQUENCER_RESOLUTION));
-    }
-
     // -- MAIN --
 
     // Init audio context
@@ -327,19 +347,6 @@ window.addEventListener("load", () => {
 
     // Init settings UI
     {
-        // let circleSliders = document.getElementsByClassName("circleSlider");
-
-        // for(let i = 0; i < circleSliders.length; i++) {
-        //     let sliderEl = circleSliders[i];
-        //     let value = parseInt(sliderEl.innerHTML);
-        //     sliderEl.innerHTML = "";
-
-        //     let slider = new CircleSlider(value);
-        //     sliderEl.appendChild(slider.element);
-
-        //     settings[sliderEl.id] = slider
-        // }
-
         let settingsDiv = document.getElementById("settings");
 
         settings["lightPower"] = new CircleSlider("lightPower", "Light Power", 0, 100, 8, v => {
@@ -353,7 +360,9 @@ window.addEventListener("load", () => {
             masterGain.gain.value = v * v / 10000;
         });
 
-        settings["tempo"] = new CircleSlider("tempo", "Tempo", 10, 512, 140, v => {});
+        settings["tempo"] = new CircleSlider("tempo", "Tempo", 10, 512, sequencer.tempo, v => {
+            sequencer.tempo = v;
+        });
 
         for(let x in settings) {
             settingsDiv.appendChild(settings[x].element)
@@ -378,7 +387,7 @@ window.addEventListener("load", () => {
             let beat = document.createElement("li");
             sequencerBeatsEl.appendChild(beat);
 
-            sequencerBeats.push(beat);
+            sequencerBars.push(beat);
         }
     }
 
@@ -404,5 +413,5 @@ window.addEventListener("load", () => {
         }
     }
 
-    sequencerLoop();
+    sequencer.main();
 });
