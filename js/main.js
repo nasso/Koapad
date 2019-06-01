@@ -13,17 +13,24 @@ const LAYOUTS = {
 // Yeah that's the only available one for now
 const ACTIVE_LAYOUT = LAYOUTS["AZERTY"];
 
-const DEFAULT_COLOR = [189.0, 195.0, 199.0];
+const DEFAULT_COLOR = [189, 195, 199];
+const PRESSED_COLOR = [80, 255, 125];
 
 const SEQUENCER_TRACK_COUNT = 8;
 const SEQUENCER_BEAT_COUNT = 16;
 
 let audioContext;
 
+function preventDefault(e) {
+    e.preventDefault();
+    return false;
+}
+
 class PadKey {
     constructor(i, audioContext, destNode) {
         const that = this;
 
+        this.callbacks = [];
         this.audioContext = audioContext;
         this.destNode = destNode;
 
@@ -59,23 +66,25 @@ class PadKey {
             reader.readAsArrayBuffer(soundFile);
         }, false);
 
+        this.element.addEventListener("contextmenu", preventDefault);
+        this.element.addEventListener("touchmove", preventDefault);
+
         this.element.addEventListener("mousedown", (e) => {
             e.preventDefault();
 
-            that.playSound(0);
+            that.pressFor(100);
+        });
 
-            let r = Math.random() * 255.0;
-            let g = Math.random() * 255.0;
-            let b = Math.random() * 255.0;
+        this.element.addEventListener("touchstart", (e) => {
+            e.preventDefault();
 
-            r = Math.floor(r);
-            g = Math.floor(g);
-            b = Math.floor(b);
+            that.press();
+        });
 
-            that.setColor(r, g, b);
-            setTimeout(() => {
-                that.resetColor();
-            }, 100);
+        this.element.addEventListener("touchend", (e) => {
+            e.preventDefault();
+
+            that.unpress();
         });
 
         this.element.appendChild(keyNumber);
@@ -83,17 +92,59 @@ class PadKey {
         this.resetColor();
     }
 
-    playSound(time) {
+    addPressCallback(callback) {
+        this.callbacks.push(callback);
+    }
+
+    removePressCallback(callback) {
+        let index = this.callbacks.indexOf(callback);
+
+        if(index >= 0) {
+            this.callbacks.splice(index, 1);
+        }
+    }
+
+    press() {
+        this.playSound(0);
+
+        this.setColor(PRESSED_COLOR[0], PRESSED_COLOR[1], PRESSED_COLOR[2]);
+
         const that = this;
+        for(let i = this.callbacks.length - 1; i >= 0; i--) {
+            this.callbacks[i](that, true);
+        }
+    }
 
-        let bufferSource = this.audioContext.createBufferSource();
-        bufferSource.buffer = this.soundBuffer;
-        bufferSource.connect(this.destNode);
-        bufferSource.start(time);
+    unpress() {
+        this.resetColor();
 
-        bufferSource.addEventListener("ended", () => {
-            bufferSource.disconnect(that.destNode);
-        });
+        const that = this;
+        for(let i = this.callbacks.length - 1; i >= 0; i--) {
+            this.callbacks[i](that, false);
+        }
+    }
+
+    pressFor(duration) {
+        this.press();
+
+        const that = this;
+        setTimeout(() => {
+            that.unpress();
+        }, duration);
+    }
+
+    playSound(time) {
+        if(this.soundBuffer && this.destNode) {
+            let bufferSource = this.audioContext.createBufferSource();
+            bufferSource.buffer = this.soundBuffer;
+            bufferSource.connect(this.destNode);
+            bufferSource.start(time);
+
+            const that = this;
+            bufferSource.addEventListener("ended", () => {
+                bufferSource.disconnect(that.destNode);
+            });
+        }
     }
 
     setColor(r, g, b) {
@@ -238,14 +289,35 @@ class CircleSlider {
 }
 
 class Sequencer {
-    constructor(tempo, beatCount, onbeat) {
+    constructor(tempo, beatCount) {
         this.tempo = tempo;
         this.beatCount = beatCount;
-        this.onbeat = onbeat;
+        this.onbeat = [];
 
         this.barStartTime = 0;
-
         this.beat = 0;
+
+        this.trackRecords = [];
+
+        this.recordingScheduled = false;
+        this.scheduledRecordTarget = 0;
+
+        this.recording = false;
+        this.recordTarget = 0;
+
+        this.playing = false;
+    }
+
+    addOnBeatCallback(callback) {
+        this.onbeat.push(callback);
+    }
+
+    removeOnBeatCallback(callback) {
+        let index = this.onbeat.indexOf(callback);
+
+        if(index >= 0) {
+            this.onbeat.splice(index, 1);
+        }
     }
 
     main() {
@@ -254,11 +326,46 @@ class Sequencer {
         // New bar if we reach 1
         if(this.beat == 1) {
             this.barStartTime = Date.now();
+
+            // Stop recording if we were!
+            if(this.recording) {
+                this.recording = false;
+            }
+
+            // Start scheduled recording
+            if(this.recordingScheduled) {
+                this.recording = true;
+
+                // Remove the scheduled record
+                this.recordingScheduled = false;
+                this.recordTarget = this.scheduledRecordTarget;
+
+                this.trackRecords[this.recordTarget] = [];
+            }
         }
 
         // Beat event function
-        if(this.onbeat) {
-            this.onbeat(this.beat);
+        for(let i = this.onbeat.length - 1; i >= 0; i--) {
+            this.onbeat[i](this);
+        }
+
+        // Play records
+        for(let i = this.trackRecords.length - 1; i >= 0; i--) {
+            // Don't play the one we're currently recording!!
+            if(this.recording && this.recordTarget == i) {
+                continue;
+            }
+
+            // Play everything else though
+            let record = this.trackRecords[i];
+
+            for(let i = record.length - 1; i >= 0; i--) {
+                let event = record[i];
+
+                if(event.beat == this.beat) {
+                    setTimeout(event.action, event.time * (60000 / this.tempo));
+                }
+            }
         }
 
         let nextBeatTime = this.beat * 60000 / this.tempo;
@@ -268,15 +375,73 @@ class Sequencer {
         const that = this;
         setTimeout(() => that.main(), nextBeatTime - elapsed);
     }
+
+    scheduleRecording(trackId) {
+        this.recordingScheduled = true;
+        this.scheduledRecordTarget = trackId;
+    }
+
+    registerAction(action) {
+        if(this.recording) {
+            let record = this.trackRecords[this.recordTarget];
+
+            let beatStartTime = this.barStartTime + (this.beat - 1) * 60000 / this.tempo;
+
+            record.push({
+                beat: this.beat,
+                time: (Date.now() - beatStartTime) * (this.tempo / 60000),
+                action: action
+            });
+        }
+    }
 }
 
 class TrackButton {
-    constructor() {
+    constructor(sequencer, trackId) {
+        this.sequencer = sequencer;
+        this.trackId = trackId;
+
+        this.ticTacLightPhase = false;
+
         this.element = document.createElement("div");
 
-        // this.element.addEventListener("mousedown", (e) => {
+        const that = this;
+        let trigger = (e) => {
+            e.preventDefault();
 
-        // });
+            that.press();
+        };
+
+        this.element.addEventListener("contextmenu", preventDefault);
+        this.element.addEventListener("touchmove", preventDefault);
+        this.element.addEventListener("touchend", preventDefault);
+
+        this.element.addEventListener("touchstart", trigger);
+        this.element.addEventListener("mousedown", trigger);
+    }
+
+    press() {
+        this.sequencer.scheduleRecording(this.trackId);
+        this.ticTac();
+    }
+
+    ticTac() {
+        const that = this;
+
+        let callback = (s) => {
+            if(s.recordingScheduled && s.scheduledRecordTarget == that.trackId) {
+                // Flashing!
+                that.element.classList.toggle("on", s.beat % 2 == 1);
+            } else {
+                // Turn off if we aren't recording on this track
+                that.element.classList.toggle("on", s.recording && s.recordTarget == that.trackId);
+
+                // Remove the callback so that we don't get further beat events
+                s.removeOnBeatCallback(callback);
+            }
+        };
+
+        this.sequencer.addOnBeatCallback(callback);
     }
 }
 
@@ -287,12 +452,8 @@ window.addEventListener("load", () => {
     let padkeys = [];
 
     let sequencerBars = [];
-    let sequencer = new Sequencer(140, SEQUENCER_BEAT_COUNT, beat => {
-        for (var i = sequencerBars.length - 1; i >= 0; i--) {
-            let el = sequencerBars[i]
-            el.classList.toggle("on", i == (beat - 1));
-        }
-    });
+    let sequencer = new Sequencer(140, SEQUENCER_BEAT_COUNT);
+
     let currentTick = 0;
 
     let masterGain;
@@ -312,17 +473,7 @@ window.addEventListener("load", () => {
 
         event.preventDefault();
 
-        let r = Math.random() * 255.0;
-        let g = Math.random() * 255.0;
-        let b = Math.random() * 255.0;
-
-        r = Math.floor(r);
-        g = Math.floor(g);
-        b = Math.floor(b);
-
-        currentPadKey.setColor(r, g, b); // Set a random color
-
-        currentPadKey.playSound(0);
+        currentPadKey.press();
     });
 
     window.addEventListener("keyup", (event) => {
@@ -334,7 +485,7 @@ window.addEventListener("load", () => {
 
         keyState[event.keyCode] = false;
 
-        currentPadKey.resetColor();
+        currentPadKey.unpress();
     });
 
     // -- MAIN --
@@ -355,7 +506,7 @@ window.addEventListener("load", () => {
         let settingsDiv = document.getElementById("settings");
 
         settings["lightPower"] = new CircleSlider("lightPower", "Light Power", 0, 100, 8, v => {
-            for (let i = padkeys.length - 1; i >= 0; i--) {
+            for(let i = padkeys.length - 1; i >= 0; i--) {
                 padkeys[i].lightPower = v
                 padkeys[i].refresh();
             }
@@ -380,7 +531,7 @@ window.addEventListener("load", () => {
         let sequencerTracks = document.getElementById("sequencerTracks");
 
         for(let i = 0; i < SEQUENCER_TRACK_COUNT; i++) {
-            let trackButton = new TrackButton();
+            let trackButton = new TrackButton(sequencer, i);
 
             sequencerTracks.appendChild(trackButton.element);
         }
@@ -388,7 +539,7 @@ window.addEventListener("load", () => {
         // Beats
         let sequencerBeatsEl = document.getElementById("sequencerBeats");
 
-        for (var i = 0; i < SEQUENCER_BEAT_COUNT; i++) {
+        for(let i = 0; i < SEQUENCER_BEAT_COUNT; i++) {
             let beat = document.createElement("li");
             sequencerBeatsEl.appendChild(beat);
 
@@ -408,6 +559,16 @@ window.addEventListener("load", () => {
                 let padkey = new PadKey(j * 10 + i, audioContext, masterGain);
                 padkeys.push(padkey);
                 row.appendChild(padkey.element);
+
+                padkey.addPressCallback((pk, pressed) => {
+                    if(sequencer.recording) {
+                        if(pressed) {
+                            sequencer.registerAction(() => pk.press());
+                        } else {
+                            sequencer.registerAction(() => pk.unpress());
+                        }
+                    }
+                });
             }
 
             keypad.appendChild(row);
@@ -417,6 +578,15 @@ window.addEventListener("load", () => {
             bindings[ACTIVE_LAYOUT.keymap[i]] = i;
         }
     }
+
+    // Sequencer beat callback
+    sequencer.addOnBeatCallback((s) => {
+        // Light up the bars to show the current beat to the user
+        for(let i = sequencerBars.length - 1; i >= 0; i--) {
+            let el = sequencerBars[i]
+            el.classList.toggle("on", i == (s.beat - 1));
+        }
+    });
 
     sequencer.main();
 });
