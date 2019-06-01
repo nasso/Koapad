@@ -1,17 +1,12 @@
-const LAYOUTS = {
-    "AZERTY": {
-        chars: ("1234567890AZERTYUIOPQSDFGHJKLMWXCVBN,;:!").split(""),
-        keymap: [
-            49, 50, 51, 52, 53, 54,  55, 56, 57,  48,
-            65, 90, 69, 82, 84, 89,  85, 73, 79,  80,
-            81, 83, 68, 70, 71, 72,  74, 75, 76,  77,
-            87, 88, 67, 86, 66, 78, 188, 59, 58, 161
-        ]
-    }
+const LAYOUT = {
+    chars: ("1234567890QWERTYUIOPASDFGHJKL;ZXCVBNM,./").split(""),
+    keymap: [
+        "Digit1", "Digit2", "Digit3", "Digit4", "Digit5", "Digit6", "Digit7", "Digit8", "Digit9", "Digit0",
+        "KeyQ", "KeyW", "KeyE", "KeyR", "KeyT", "KeyY", "KeyU", "KeyI", "KeyO", "KeyP",
+        "KeyA", "KeyS", "KeyD", "KeyF", "KeyG", "KeyH", "KeyJ", "KeyK", "KeyL", "Semicolon",
+        "KeyZ", "KeyX", "KeyC", "KeyV", "KeyB", "KeyN", "KeyM", "Comma", "Period", "Slash"
+    ]
 };
-
-// Yeah that's the only available one for now
-const ACTIVE_LAYOUT = LAYOUTS["AZERTY"];
 
 const DEFAULT_COLOR = [189, 195, 199];
 const PRESSED_COLOR = [80, 255, 125];
@@ -36,7 +31,7 @@ class PadKey {
 
         let keyNumber = document.createElement("span");
         keyNumber.setAttribute("class", "keyNumber");
-        keyNumber.innerHTML = ACTIVE_LAYOUT.chars[i];
+        keyNumber.innerHTML = LAYOUT.chars[i];
 
         this.element = document.createElement("div");
         this.element.classList.add("key");
@@ -459,13 +454,13 @@ window.addEventListener("load", () => {
     let masterGain;
 
     window.addEventListener("keydown", (event) => {
-        if(keyState[event.keyCode]) {
+        if(keyState[event.code]) {
             return;
         }
 
-        keyState[event.keyCode] = true;
+        keyState[event.code] = true;
 
-        let currentPadKey = padkeys[bindings[event.keyCode]];
+        let currentPadKey = padkeys[bindings[event.code]];
 
         if(!currentPadKey) {
             return;
@@ -477,13 +472,13 @@ window.addEventListener("load", () => {
     });
 
     window.addEventListener("keyup", (event) => {
-        let currentPadKey = padkeys[bindings[event.keyCode]];
+        let currentPadKey = padkeys[bindings[event.code]];
 
         if(!currentPadKey) {
             return;
         }
 
-        keyState[event.keyCode] = false;
+        keyState[event.code] = false;
 
         currentPadKey.unpress();
     });
@@ -574,8 +569,8 @@ window.addEventListener("load", () => {
             keypad.appendChild(row);
         }
 
-        for(let i = 0; i < ACTIVE_LAYOUT.keymap.length; i++) {
-            bindings[ACTIVE_LAYOUT.keymap[i]] = i;
+        for(let i = 0; i < LAYOUT.keymap.length; i++) {
+            bindings[LAYOUT.keymap[i]] = i;
         }
     }
 
