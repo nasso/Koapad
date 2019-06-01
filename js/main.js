@@ -52,9 +52,13 @@ class PadKey {
 
             reader.addEventListener("loadend", (e) => {
                 if(e.target.result && !e.target.error) {
-                    that.audioContext.decodeAudioData(e.target.result, function(buffer) {
-                        that.soundBuffer = buffer;
-                    });
+                    that.audioContext.decodeAudioData(e.target.result)
+                        .then((buffer) => {
+                            that.soundBuffer = buffer;
+                        })
+                        .catch((e) => {
+                            alert("This audio file couldn't be loaded! Please try with another one, or with another web browser.");
+                        });
                 }
             });
 
