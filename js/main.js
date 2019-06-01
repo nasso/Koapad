@@ -358,11 +358,13 @@ class Sequencer {
             // Play everything else though
             let record = this.trackRecords[i];
 
-            for(let i = record.length - 1; i >= 0; i--) {
-                let event = record[i];
+            if(record) {
+                for(let i = record.length - 1; i >= 0; i--) {
+                    let event = record[i];
 
-                if(event.beat == this.beat) {
-                    setTimeout(event.action, event.time * (60000 / this.tempo));
+                    if(event.beat == this.beat) {
+                        setTimeout(event.action, event.time * (60000 / this.tempo));
+                    }
                 }
             }
         }
